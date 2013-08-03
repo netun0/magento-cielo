@@ -137,21 +137,6 @@
 							<show_in_website>1</show_in_website>
 					  		<show_in_store>1</show_in_store>
 					    </autenticate>
-					    <ssl_file translate="label">
-					  		<label>SSL File</label>
-					  		<frontend_type>text</frontend_type>
-					  		<sort_order>70</sort_order>
-					  		<show_in_default>1</show_in_default>
-					  		<show_in_website>1</show_in_website>
-					  		<show_in_store>1</show_in_store>
-							<comment>
-							<![CDATA[
-							<div>
-							    Caminho do arquivo SSL no servidor
-							</div>
-							]]>
-						    </comment>
-				      	</ssl_file>
 					    <order_status translate="label">
 							<label>New Order Status</label>
 							<frontend_type>select</frontend_type>
