@@ -58,7 +58,7 @@ class Query_Cielo_Model_WebServiceOrder
 	private $_URLAuthTag = "url-autenticacao";	// tag que armazena a url de autenticacao da transacao
 	
 	const ENCODING = "ISO-8859-1";				// codificacao do xml
-	const VERSION = "1.2.0";					// versao do webservice da cielo
+	const VERSION = "1.2.1";					// versao do webservice da cielo
 	
 	
 	function __construct($params)
