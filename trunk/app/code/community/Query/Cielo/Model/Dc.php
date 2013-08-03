@@ -60,7 +60,13 @@ class Query_Cielo_Model_Dc extends Mage_Payment_Model_Method_Abstract
 		}
 		else
 		{
-			$cardType = $data->getCcType();
+			if($data->getCcType() == "mastercard-maestro"){
+				
+				$cardType = "mastercard";
+
+			}else{
+				$cardType = $data->getCcType();	
+			}
 		}
 		
 		$info->setCcType($cardType)
@@ -358,7 +364,7 @@ class Query_Cielo_Model_Dc extends Mage_Payment_Model_Method_Abstract
 			'autorize'			=> '1',
 			'clientOrderNumber'	=> $payment->getId(),
 			'clientOrderValue'	=> $value,
-			'postbackURL'		=> Mage::getUrl('cielo/pay/verify'),
+			'postbackURL'		=> Mage::getUrl('querycielo/pay/verify'),
 			'paymentType'		=> 'A',
 			'paymentParcels'	=> 1,
 			'clientSoftDesc'	=> $this->getConfigData('softdescriptor', $storeId)

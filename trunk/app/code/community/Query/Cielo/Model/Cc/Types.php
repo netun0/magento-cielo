@@ -95,6 +95,22 @@ class Query_Cielo_Model_Cc_Types
 				'image' 	=> 'Amex.png',
 				'inst_s' 	=> 10,
 				'inst_a' 	=> 24
+			),
+			array
+			(
+				'value' 	=> 'aura',
+				'label' 	=> Mage::helper('adminhtml')->__('Aura'),
+				'image' 	=> 'Aura.png',
+				'inst_s' 	=> 10,
+				'inst_a' 	=> 24
+			),
+			array
+			(
+				'value' 	=> 'jcb',
+				'label' 	=> Mage::helper('adminhtml')->__('JCB'),
+				'image' 	=> 'Jcb.png',
+				'inst_s' 	=> 10,
+				'inst_a' 	=> 24
 			)
         );
     }
@@ -109,11 +125,13 @@ class Query_Cielo_Model_Cc_Types
         return array
 		(
             'visa' 					=> Mage::helper('adminhtml')->__('Visa'),
-            'mastercard' 			=> Mage::helper('adminhtml')->__('Mastercard'),
-            'diners' 				=> Mage::helper('adminhtml')->__('Diners Club'),
-            'discover' 				=> Mage::helper('adminhtml')->__('Discover'),
+            'mastercard' 				=> Mage::helper('adminhtml')->__('Mastercard'),
+            'diners' 					=> Mage::helper('adminhtml')->__('Diners Club'),
+            'discover' 					=> Mage::helper('adminhtml')->__('Discover'),
             'elo' 					=> Mage::helper('adminhtml')->__('Elo'),
             'amex' 					=> Mage::helper('adminhtml')->__('American Express'),
+	    'aura' 					=> Mage::helper('adminhtml')->__('Aura'),
+            'jcb' 					=> Mage::helper('adminhtml')->__('JCB'),
         );
     }
 	
@@ -131,7 +149,9 @@ class Query_Cielo_Model_Cc_Types
             'diners',
             'discover',
             'elo',
-            'amex'
+            'amex',
+	    'aura',
+            'jcb'
         );
     }
 }

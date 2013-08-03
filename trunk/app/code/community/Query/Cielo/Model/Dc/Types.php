@@ -39,13 +39,19 @@ class Query_Cielo_Model_Dc_Types
     public function toOptionArray()
     {
         return array
-		(
+	(
 			array
 			(
 				'value' 	=> 'visa-electron',
-				'label' 	=> Mage::helper('adminhtml')->__('Visa Electron (somente Bradesco)'),
+				'label' 	=> Mage::helper('adminhtml')->__('Visa Electron'),
 				'image' 	=> 'Visa-Electron.png'
-			)
+			),   
+	               array
+	                (
+                	        'value'     => 'mastercard-maestro',
+		                'label'     => Mage::helper('adminhtml')->__('Mastercard Maestro'),
+		                'image'     => 'Master-maestro.png'
+	                )
         );
     }
 
@@ -56,9 +62,10 @@ class Query_Cielo_Model_Dc_Types
      */
     public function toArray()
     {
-        return array
-		(
-            'visa' 	=> Mage::helper('adminhtml')->__('Visa Electron')
+        return array		
+	(
+            'visa' 	=> Mage::helper('adminhtml')->__('Visa Electron'),
+	    'mastercard'  => Mage::helper('adminhtml')->__('Mastercard Maestro')
         );
     }
 	
@@ -70,8 +77,9 @@ class Query_Cielo_Model_Dc_Types
     public function getCodes()
     {
         return array
-		(
-            'visa'
+	(
+            'visa',
+            'mastercard'
         );
     }
 }
