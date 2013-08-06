@@ -351,7 +351,7 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
         return $this;
     }
     
-    
+   
     
 	
 	
@@ -380,7 +380,10 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		$autoCapture		= $this->getConfigData('auto_capture', $storeId);
 		$environment 		= $this->getConfigData('environment', $storeId);
 		$sslFile	 		= $this->getConfigData('ssl_file', $storeId);
+		$tokenize			= $this->getConfigData('tokenize', $storeId);
+
 		
+
 		// cria instancia do pedido
 		$webServiceOrder = Mage::getModel('Query_Cielo/webServiceOrder', array('enderecoBase' => $environment, 'caminhoCertificado' => $sslFile));
 		
@@ -395,9 +398,11 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 			'clientOrderNumber'	=> $payment->getId(),
 			'clientOrderValue'	=> $value,
 			'postbackURL'		=> Mage::getUrl('querycielo/pay/verify'),
-			'clientSoftDesc'	=> $this->getConfigData('softdescriptor', $storeId)
+			'clientSoftDesc'	=> $this->getConfigData('softdescriptor', $storeId)	
 		);
-		
+
+		Mage::log($webServiceOrderData);
+
 		// conforme mostrado no manual versao 2.5.1, pagina 13,
 		// caso o cartao seja Dinners, Discover, Elo, Amex,Aura ou JCB
 		// o valor do flag autorizar deve ser 3
@@ -444,6 +449,15 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		{
 			$ownerData = false;
 		}
+		if($tokenize == 1){
+		 $webServiceOrder->requestToken($ownerData);
+	   	 $xml = $webServiceOrder->getXmlResponse();
+	   	 Mage::log($xml);			
+		}
+
+	  
+		
+
 		
 		$redirectUrl = $webServiceOrder->requestTransaction($ownerData);
 		Mage::getSingleton('core/session')->setData('cielo-transaction', $webServiceOrder);

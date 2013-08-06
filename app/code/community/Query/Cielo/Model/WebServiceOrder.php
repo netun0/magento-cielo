@@ -115,7 +115,6 @@ class Query_Cielo_Model_WebServiceOrder
 	public function requestTransaction($ownerData)
 	{
 		$msg  = $this->_getXMLHeader() . "\n";
-		
 		$msg .= '<requisicao-transacao id="' . md5(date("YmdHisu")) . '" versao="' . self::VERSION . '">' . "\n   ";
 		$msg .= $this->_getXMLCieloData() . "\n   ";
 		$msg .= $this->_getXMLOwnerData($ownerData) . "\n   ";
@@ -126,6 +125,7 @@ class Query_Cielo_Model_WebServiceOrder
 		$msg .= $this->_getXMLCapture() . "\n   ";
 		$msg .= '</requisicao-transacao>';
 		
+
 		$maxAttempts = 3;
 		
 		while($maxAttempts > 0)
@@ -156,6 +156,47 @@ class Query_Cielo_Model_WebServiceOrder
 		}
 		
 		return false;
+	}
+
+	/**
+	*
+	*	
+	*/
+	public function requestToken($ownerData){
+		$msg  = $this->_getXMLHeader() . "\n";
+		$msg .= '<requisicao-token id="' . md5(date("YmdHisu")) . '" versao="' . self::VERSION . '">' . "\n   ";
+		$msg .= $this->_getXMLCieloData() . "\n   ";
+		$msg .= $this->_getXMLOwnerData($ownerData) . "\n   ";
+		$msg .= '</requisicao-token>';
+		
+		Mage::log($msg);
+
+		$maxAttempts = 3;
+		
+		while($maxAttempts > 0)
+		{
+			if($this->_sendRequest("mensagem=" . $msg, "Token"))
+			{
+				if($this->_hasConsultationError())
+				{
+					Mage::log($this->_transactionError);
+					return false;
+				}
+				
+				$xml = simplexml_load_string($this->_xmlResponse);
+				
+				return $xml;
+			}
+			
+			$maxAttempts--;
+		}
+		
+		if($maxAttempts == 0)
+		{
+			Mage::log("[CIELO] Não conseguiu consultar o servidor.");
+		}
+		
+		return false;	
 	}
 	
 	
@@ -447,24 +488,22 @@ class Query_Cielo_Model_WebServiceOrder
 		{
 			return "";
 		}
-		
-		
 		$msg = '<dados-portador>' . "\n      " . 
-					'<numero>' 
-						. $ownerData['number'] .
-					'</numero>' . "\n      " .
-					'<validade>'
-						. $ownerData['exp_date'] .
-					'</validade>' . "\n      " .
-					'<indicador>'
-						. "1" .
-					'</indicador>' . "\n      " .
-					'<codigo-seguranca>'
-						. $ownerData['sec_code'] .
-					'</codigo-seguranca>' . "\n      " . 
-					'<nome-portador>'
-						. $ownerData['name'] .
-					'</nome-portador>' . "\n   " .
+				'<numero>' 
+					. $ownerData['number'] .
+				'</numero>' . "\n      " .
+				'<validade>'
+					. $ownerData['exp_date'] .
+				'</validade>' . "\n      " .
+				'<indicador>'
+					. "1" .
+				'</indicador>' . "\n      " .
+				'<codigo-seguranca>'
+					. $ownerData['sec_code'] .
+				'</codigo-seguranca>' . "\n      " . 
+				'<nome-portador>'
+					. $ownerData['name'] .
+				'</nome-portador>' . "\n   " .
 				'</dados-portador>';
 		
 		return $msg;
@@ -548,4 +587,9 @@ class Query_Cielo_Model_WebServiceOrder
 		
 		return $msg;
 	}
+	
+
+
+
 }
+	
