@@ -40,6 +40,7 @@ class Query_Cielo_PayController extends Mage_Core_Controller_Front_Action
 	
 	public function verifyAction()
 	{
+		
 		if(!Mage::getSingleton('core/session')->getData('cielo-transaction'))
 		{
 			$url = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB);
@@ -55,7 +56,7 @@ class Query_Cielo_PayController extends Mage_Core_Controller_Front_Action
 		$webServiceOrder = Mage::getSingleton('core/session')->getData('cielo-transaction');
 		Mage::getSingleton('core/session')->unsetData('cielo-transaction');
 		$autoCapture = Mage::getStoreConfig('payment/Query_Cielo_Cc/auto_capture');
-		
+
 		$this->loadLayout();
 		$block = $this->getLayout()->getBlock('Query_Cielo.success');
 		
