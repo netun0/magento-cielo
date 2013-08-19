@@ -224,6 +224,46 @@ class Query_Cielo_Block_Form_Cc extends Mage_Payment_Block_Form
     	
     	return $installmentsArray;
 	}
+
+	/**
+	*	Retorna todos os tokens que o cliente tem na loja
+	*
+	*/
+
+	public function getCieloTokens(){
+
+		//Só pesquisa por token se a loja permiter tokenize
+		if($this->getConfigData('tokenize') && Mage::getSingleton('customer/session')->isLoggedIn()){
+		
+			$readConnection = Mage::getSingleton('core/resource')->getConnection('core_read');
+			$customerId = Mage::getSingleton('checkout/cart')->getQuote()->getCustomerId();		
+			$query = "SELECT token,cc_type,last_digits FROM customer_cielo_token WHERE customer_id=".$customerId;
+
+			$cardsAllowed = $this->getAllowedCards();
+ 
+ 			$tokens = $readConnection->fetchAll($query);
+
+ 			for ($i=0; $i < count($tokens); $i++) {
+ 				foreach ($cardsAllowed as $card) {
+ 					if($tokens[$i]['cc_type'] == $card['value']){
+ 						$tokens[$i]['image'] = $card['image'];
+
+ 					}
+ 				}
+ 			}
+ 			
+ 			return $tokens;
+
+		}else{
+
+			return false;
+
+		}
+
+		
+
+
+	}
 	
 	/**
      * 

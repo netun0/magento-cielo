@@ -117,13 +117,77 @@ class Query_Cielo_Model_WebServiceOrder
 		$msg  = $this->_getXMLHeader() . "\n";
 		$msg .= '<requisicao-transacao id="' . md5(date("YmdHisu")) . '" versao="' . self::VERSION . '">' . "\n   ";
 		$msg .= $this->_getXMLCieloData() . "\n   ";
-		$msg .= $this->_getXMLOwnerData($ownerData) . "\n   ";
+		$msg .= $this->_getXMLOwnerData($ownerData,false) . "\n   ";
 		$msg .= $this->_getXMLOrderData() . "\n   ";
 		$msg .= $this->_getXMLPaymentData() . "\n   ";
 		$msg .= $this->_getXMLPostbackURL() . "\n   ";
 		$msg .= $this->_getXMLAutorize() . "\n   ";
 		$msg .= $this->_getXMLCapture() . "\n   ";
 		$msg .= '</requisicao-transacao>';
+		
+<<<<<<< .mine
+		
+
+=======
+
+>>>>>>> .r9
+		$maxAttempts = 3;
+		
+		while($maxAttempts > 0)
+		{
+			if($this->_sendRequest("mensagem=" . $msg, "Transacao"))
+			{
+				if($this->_hasConsultationError())
+				{
+					Mage::log($this->_transactionError);
+					return false;
+				}
+				
+				$xml = simplexml_load_string($this->_xmlResponse);
+				
+				// pega dados do xml
+				$this->tid = (string) $xml->tid;
+
+				$URLAuthTag = $this->_URLAuthTag;
+				
+				return ((string) $xml->$URLAuthTag);
+			}
+			
+			$maxAttempts--;
+		}
+		
+		if($maxAttempts == 0)
+		{
+			Mage::log("[CIELO] Não conseguiu consultar o servidor.");
+		}
+		
+		return false;
+	}
+
+
+	/*
+	*
+	* funcao resposavel por montar o xml da requisição de transacao
+	* realizada por token
+	*
+	* @param  $ownerData
+	* @return boolean | XML
+	*	
+	*/
+
+	public function requestTransactionByToken($ownerData){
+		$msg  = $this->_getXMLHeader() . "\n";
+		
+		$msg .= '<requisicao-transacao id="' . md5(date("YmdHisu")) . '" versao="' . self::VERSION . '">' . "\n   ";
+		$msg .= $this->_getXMLCieloData() . "\n   ";
+		$msg .= $this->_getXMLOwnerData($ownerData,true) . "\n   ";
+		$msg .= $this->_getXMLOrderData() . "\n   ";
+		$msg .= $this->_getXMLPaymentData() . "\n   ";
+		$msg .= $this->_getXMLPostbackURL() . "\n   ";
+		$msg .= "<autorizar>3</autorizar>" . "\n   ";
+		$msg .= $this->_getXMLCapture() . "\n   ";
+		$msg .= '</requisicao-transacao>';
+		
 		
 
 		$maxAttempts = 3;
@@ -142,6 +206,7 @@ class Query_Cielo_Model_WebServiceOrder
 				
 				// pega dados do xml
 				$this->tid = (string) $xml->tid;
+
 				$URLAuthTag = $this->_URLAuthTag;
 				
 				return ((string) $xml->$URLAuthTag);
@@ -158,9 +223,21 @@ class Query_Cielo_Model_WebServiceOrder
 		return false;
 	}
 
+
+
 	/**
-	*
-	*	
+	 *
+	 * funcao responsavel por montar o xml de requisicao de token e 
+	 * realizar o pedido a cielo
+	 * 
+	 * @param boolean $ownerData
+	 * @return boolean | XML
+	 * 
+	 */
+
+	/**
+	* funcao responsavel por realizar uma requisição de criação de token
+	* @param $ownerData	
 	*/
 	public function requestToken($ownerData){
 		$msg  = $this->_getXMLHeader() . "\n";
@@ -197,6 +274,46 @@ class Query_Cielo_Model_WebServiceOrder
 		}
 		
 		return false;	
+	}
+
+	
+	public function requestToken($ownerData)
+	{
+		$msg  = $this->_getXMLHeader() . "\n";
+		
+		$msg .= '<requisicao-token id="' . md5(date("YmdHisu")) . '" versao="' . self::VERSION . '">' . "\n   ";
+		$msg .= $this->_getXMLCieloData() . "\n   ";
+		$msg .= $this->_getXMLOwnerData($ownerData,false) . "\n   ";
+		$msg .= '</requisicao-token>';
+		
+    	$maxAttempts = 3;
+		
+		while($maxAttempts > 0)
+		{
+			if($this->_sendRequest("mensagem=" . $msg, "Token"))
+			{
+				if($this->_hasConsultationError())
+				{
+					Mage::log($this->_transactionError);
+					return false;
+				}
+				
+				$xml = simplexml_load_string($this->_xmlResponse);
+				
+				
+				
+				return ($xml);
+			}
+			
+			$maxAttempts--;
+		}
+		
+		if($maxAttempts == 0)
+		{
+			Mage::log("[CIELO] Não conseguiu consultar o servidor.");
+		}
+		
+		return false;
 	}
 	
 	
@@ -269,7 +386,7 @@ class Query_Cielo_Model_WebServiceOrder
 		$maxAttempts = 3;
 		
 		while($maxAttempts > 0)
-		{
+		{	
 			if($this->_sendRequest("mensagem=" . $msg, "Captura"))
 			{
 				if($this->_hasConsultationError())
@@ -482,13 +599,24 @@ class Query_Cielo_Model_WebServiceOrder
 		return $msg;
 	}
 	
-	private function _getXMLOwnerData($ownerData)
+	private function _getXMLOwnerData($ownerData,$tokenTransaction)
 	{
 		if(!$ownerData)
 		{
 			return "";
 		}
-		$msg = '<dados-portador>' . "\n      " . 
+		
+		if($tokenTransaction){
+
+			$msg = '<dados-portador>' . "\n      " . 
+					'<token>' 
+						. $ownerData['token'] .
+					'</token>' . "\n      ".
+					'</dados-portador>';
+
+		}else{
+		
+			$msg = '<dados-portador>' . "\n      " . 
 				'<numero>' 
 					. $ownerData['number'] .
 				'</numero>' . "\n      " .
@@ -505,6 +633,7 @@ class Query_Cielo_Model_WebServiceOrder
 					. $ownerData['name'] .
 				'</nome-portador>' . "\n   " .
 				'</dados-portador>';
+		}
 		
 		return $msg;
 	}

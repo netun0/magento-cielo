@@ -54,7 +54,9 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		$info = $this->getInfoInstance();
         $additionaldata = array
         (
-			'parcels_number' => $data->getParcelsNumber()
+			'parcels_number' => $data->getParcelsNumber(),
+			'token' =>	$data->getToken()
+
 		);
 		
 		$info->setCcType($data->getCcType())
@@ -119,109 +121,123 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		$info = $this->getInfoInstance();
 		$errorMsg = false;
 		
+
+
 		if($this->getConfigData('buypage', $this->getStoreId()) != "loja")
 			return $this;
 		
-		$availableTypes = Mage::getModel('Query_Cielo/cc_types')->getCodes();
-		$ccNumber = Mage::helper('core')->decrypt($info->getCcNumber());
+		$additionalData = unserialize($info->getAdditionalData());
 
-		// remove delimitadores do cartao, como "-" e espaco
-		$ccNumber = preg_replace('/[\-\s]+/', '', $ccNumber);
-		$info->setCcNumber(Mage::helper('core')->encrypt($ccNumber));
+		if(($additionalData['token']) != ''){
+			$availableTypes = Mage::getModel('Query_Cielo/cc_types')->getCodes();
+			if(in_array($info->getCcType(), $availableTypes)){
 
-		$ccType = '';
-		
-		// valida o numero do cartao de credito
-		if(in_array($info->getCcType(), $availableTypes))
-		{
-			if ($this->validateCcNum($ccNumber))
+			}else{
+				$errorMsg = Mage::helper('Query_Cielo')->__('Credit card type is not allowed for this payment method.');
+			}							
+		}else{
+
+			$availableTypes = Mage::getModel('Query_Cielo/cc_types')->getCodes();
+			$ccNumber = Mage::helper('core')->decrypt($info->getCcNumber());
+
+			// remove delimitadores do cartao, como "-" e espaco
+			$ccNumber = preg_replace('/[\-\s]+/', '', $ccNumber);
+			$info->setCcNumber(Mage::helper('core')->encrypt($ccNumber));
+
+			$ccType = '';
+			
+			// valida o numero do cartao de credito
+			if(in_array($info->getCcType(), $availableTypes))
 			{
-				$ccType = 'OT';
-				$ccTypeRegExpList = array
-				(
-					//Solo, Switch or Maestro. International safe
-					/*
-					// Maestro / Solo
-					'SS'  => '/^((6759[0-9]{12})|(6334|6767[0-9]{12})|(6334|6767[0-9]{14,15})'
-							. '|(5018|5020|5038|6304|6759|6761|6763[0-9]{12,19})|(49[013][1356][0-9]{12})'
-							. '|(633[34][0-9]{12})|(633110[0-9]{10})|(564182[0-9]{10}))([0-9]{2,3})?$/',
-					*/
-					// Solo only
-					'SO' => '/(^(6334)[5-9](\d{11}$|\d{13,14}$))|(^(6767)(\d{12}$|\d{14,15}$))/',
-					/*'SM' => '/(^(5[0678])\d{11,18}$)|(^(6[^05])\d{11,18}$)|(^(601)[^1]\d{9,16}$)|(^(6011)\d{9,11}$)'
-							. '|(^(6011)\d{13,16}$)|(^(65)\d{11,13}$)|(^(65)\d{15,18}$)'
-							. '|(^(49030)[2-9](\d{10}$|\d{12,13}$))|(^(49033)[5-9](\d{10}$|\d{12,13}$))'
-							. '|(^(49110)[1-2](\d{10}$|\d{12,13}$))|(^(49117)[4-9](\d{10}$|\d{12,13}$))'
-							. '|(^(49118)[0-2](\d{10}$|\d{12,13}$))|(^(4936)(\d{12}$|\d{14,15}$))/',*/
-					// Visa
-					'visa'  => '/^4[0-9]{12}([0-9]{3})?$/',
-					// Master Card
-					'mastercard'  => '/^5[1-5][0-9]{14}$/',
-					// American Express
-					'amex'  => '/^3[47][0-9]{13}$/',
-					// Discovery
-					'discover'  => '/^6011[0-9]{12}$/',
-					// JCB
-					'jcb' => '/^(3[0-9]{15}|(2131|1800)[0-9]{11})$/',
-					// Diners Club
-					'diners' => '/^3[0,6,8]\d{12}$/',
-					//aura
-					'aura' => '/^\d{19}$/'
-				);
-
-				foreach ($ccTypeRegExpList as $ccTypeMatch => $ccTypeRegExp)
+				if ($this->validateCcNum($ccNumber))
 				{
-					if (preg_match($ccTypeRegExp, $ccNumber))
+					$ccType = 'OT';
+					$ccTypeRegExpList = array
+					(
+						//Solo, Switch or Maestro. International safe
+						/*
+						// Maestro / Solo
+						'SS'  => '/^((6759[0-9]{12})|(6334|6767[0-9]{12})|(6334|6767[0-9]{14,15})'
+								. '|(5018|5020|5038|6304|6759|6761|6763[0-9]{12,19})|(49[013][1356][0-9]{12})'
+								. '|(633[34][0-9]{12})|(633110[0-9]{10})|(564182[0-9]{10}))([0-9]{2,3})?$/',
+						*/
+						// Solo only
+						'SO' => '/(^(6334)[5-9](\d{11}$|\d{13,14}$))|(^(6767)(\d{12}$|\d{14,15}$))/',
+						/*'SM' => '/(^(5[0678])\d{11,18}$)|(^(6[^05])\d{11,18}$)|(^(601)[^1]\d{9,16}$)|(^(6011)\d{9,11}$)'
+								. '|(^(6011)\d{13,16}$)|(^(65)\d{11,13}$)|(^(65)\d{15,18}$)'
+								. '|(^(49030)[2-9](\d{10}$|\d{12,13}$))|(^(49033)[5-9](\d{10}$|\d{12,13}$))'
+								. '|(^(49110)[1-2](\d{10}$|\d{12,13}$))|(^(49117)[4-9](\d{10}$|\d{12,13}$))'
+								. '|(^(49118)[0-2](\d{10}$|\d{12,13}$))|(^(4936)(\d{12}$|\d{14,15}$))/',*/
+						// Visa
+						'visa'  => '/^4[0-9]{12}([0-9]{3})?$/',
+						// Master Card
+						'mastercard'  => '/^5[1-5][0-9]{14}$/',
+						// American Express
+						'amex'  => '/^3[47][0-9]{13}$/',
+						// Discovery
+						'discover'  => '/^6011[0-9]{12}$/',
+						// JCB
+						'jcb' => '/^(3[0-9]{15}|(2131|1800)[0-9]{11})$/',
+						// Diners Club
+						'diners' => '/^3[0,6,8]\d{12}$/',
+						//aura
+						'aura' => '/^\d{19}$/'
+					);
+
+					foreach ($ccTypeRegExpList as $ccTypeMatch => $ccTypeRegExp)
 					{
-						$ccType = $ccTypeMatch;
-						break;
+						if (preg_match($ccTypeRegExp, $ccNumber))
+						{
+							$ccType = $ccTypeMatch;
+							break;
+						}
+					}
+
+					if ($info->getCcType() != 'elo' && ($ccType != $info->getCcType()))
+					{
+						$errorMsg = Mage::helper('Query_Cielo')->__('Credit card number mismatch with credit card type.');
 					}
 				}
-
-				if ($info->getCcType() != 'elo' && ($ccType != $info->getCcType()))
+				else
 				{
-					$errorMsg = Mage::helper('Query_Cielo')->__('Credit card number mismatch with credit card type.');
+					$errorMsg = Mage::helper('Query_Cielo')->__('Invalid Credit Card Number');
 				}
+
 			}
 			else
 			{
-				$errorMsg = Mage::helper('Query_Cielo')->__('Invalid Credit Card Number');
+				$errorMsg = Mage::helper('Query_Cielo')->__('Credit card type is not allowed for this payment method.');
 			}
 
-		}
-		else
-		{
-			$errorMsg = Mage::helper('Query_Cielo')->__('Credit card type is not allowed for this payment method.');
-		}
-
-		// valida o numero de verificacao
-		if ($errorMsg === false)
-		{
-			$verificationRegEx = $this->getVerificationRegEx();
-			$regExp = isset($verificationRegEx[$info->getCcType()]) ? $verificationRegEx[$info->getCcType()] : '';
-			
-			if ($regExp != '' && (!$info->getCcCid() || !preg_match($regExp, Mage::helper('core')->decrypt($info->getCcCid()))))
+			// valida o numero de verificacao
+			if ($errorMsg === false)
 			{
-				$errorMsg = Mage::helper('Query_Cielo')->__('Please enter a valid credit card verification number.');
+				$verificationRegEx = $this->getVerificationRegEx();
+				$regExp = isset($verificationRegEx[$info->getCcType()]) ? $verificationRegEx[$info->getCcType()] : '';
+				
+				if ($regExp != '' && (!$info->getCcCid() || !preg_match($regExp, Mage::helper('core')->decrypt($info->getCcCid()))))
+				{
+					$errorMsg = Mage::helper('Query_Cielo')->__('Please enter a valid credit card verification number.');
+				}
 			}
+
+			if (!$this->_validateExpDate($info->getCcExpYear(), $info->getCcExpMonth()))
+			{
+				
+				$errorMsg = Mage::helper('Query_Cielo')->__('Incorrect credit card expiration date.');
+			}
+
+			if($errorMsg)
+			{
+				Mage::throwException($errorMsg);
+			}
+
+			//This must be after all validation conditions
+			//if ($this->getIsCentinelValidationEnabled())
+			//{
+			//	$this->getCentinelValidator()->validate($this->getCentinelValidationData());
+			//}
 		}
-
-		if (!$this->_validateExpDate($info->getCcExpYear(), $info->getCcExpMonth()))
-		{
-			$errorMsg = Mage::helper('Query_Cielo')->__('Incorrect credit card expiration date.');
-		}
-
-		if($errorMsg)
-		{
-			Mage::throwException($errorMsg);
-		}
-
-		//This must be after all validation conditions
-		//if ($this->getIsCentinelValidationEnabled())
-		//{
-		//	$this->getCentinelValidator()->validate($this->getCentinelValidationData());
-		//}
-
 		return $this;
 	}
 	
@@ -314,9 +330,6 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
         return true;
     }
     
-    
-    
-    
     /**
      *  Getter da instancia do pedido
      *
@@ -350,10 +363,6 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
         }
         return $this;
     }
-    
-   
-    
-	
 	
 	/**
      * Abre transacao com a Cielo para uma compra e redirectiona para a 
@@ -401,7 +410,7 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 			'clientSoftDesc'	=> $this->getConfigData('softdescriptor', $storeId)	
 		);
 
-		Mage::log($webServiceOrderData);
+		
 
 		// conforme mostrado no manual versao 2.5.1, pagina 13,
 		// caso o cartao seja Dinners, Discover, Elo, Amex,Aura ou JCB
@@ -427,7 +436,8 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 			$webServiceOrderData['paymentType'] = $paymentParcels;
 			$webServiceOrderData['paymentParcels'] = $paymentType;
 		}
-		
+
+
 		$webServiceOrder->setData($webServiceOrderData);
 		
 		
@@ -436,30 +446,94 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		{
 			$ccExpMonth = $info->getCcExpMonth();
 			$ccExpMonth = ($ccExpMonth < 10) ? ("0" . $ccExpMonth) : $ccExpMonth;
+			$additionalData = unserialize($info->getAdditionalData());
 			
+
 			$ownerData = array
 			(
 				'number' 	=> Mage::helper('core')->decrypt($info->getCcNumber()),
 				'exp_date' 	=> $info->getCcExpYear() . $ccExpMonth,
 				'sec_code' 	=> Mage::helper('core')->decrypt($info->getCcCid()),
-				'name' 		=> $info->getCcOwner()
+				'name' 		=> $info->getCcOwner(),
+				'token'		=> ''
 			);
 		}
 		else
 		{
 			$ownerData = false;
 		}
-		if($tokenize == 1){
-		 $webServiceOrder->requestToken($ownerData);
-	   	 $xml = $webServiceOrder->getXmlResponse();
-	   	 Mage::log($xml);			
+
+		
+		$resource = Mage::getSingleton('core/resource');
+       	$readConnection = $resource->getConnection('core_read');
+		$writeConnection = $resource->getConnection('core_write');
+
+
+		/*Cria token caso o cliente não tenha e a loja permita*/
+		if($tokenize == 1  && $this->getConfigData('buypage', $storeId) == "loja" && $additionalData['token'] == ''){
+		 
+		  $resource = Mage::getSingleton('core/resource');
+       	  $readConnection = $resource->getConnection('core_read');
+		  $sql = "SELECT * FROM customer_cielo_token WHERE customer_id=".$order->getCustomerId()." AND cc_type='".$ccType."' ";
+     	  $results = $readConnection->fetchAll($sql);
+
+		  
+
+		 if(!$results){
+
+			 $webServiceOrder->requestToken($ownerData);
+		   	 $xml = $webServiceOrder->getXmlResponse();
+		   	 
+		   	 $tokenData = array();
+	    	 $tokenData['codeToken'] 	 = (string)($xml->token->{'dados-token'}->{'codigo-token'});
+	    	 $cartaoTruncado 			 = (string)($xml->token->{'dados-token'}->{'numero-cartao-truncado'});
+			 $tokenData['lastDigits'] 	 = Mage::Helper('core')->encrypt(substr($cartaoTruncado,(strlen($cartaoTruncado)-4),4));
+			 
+		   	 
+			 $sql = "INSERT INTO `customer_cielo_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
+			
+			 $writeConnection->query($sql);
+		   	 
+		   	 $ownerData['token'] = $tokenData['codeToken'];
+
+	   	 }else{
+	   	 	if(Mage::Helper('core')->decrypt($results[0]['last_digits']) != substr($ownerData['number'],(strlen($ownerData['number'])-4),4)){
+
+				 $webServiceOrder->requestToken($ownerData);
+			   	 $xml = $webServiceOrder->getXmlResponse();
+			   	 
+			   	 $tokenData = array();
+		    	 $tokenData['codeToken'] 	 = (string)($xml->token->{'dados-token'}->{'codigo-token'});
+		    	 $cartaoTruncado 			 = (string)($xml->token->{'dados-token'}->{'numero-cartao-truncado'});
+				 $tokenData['lastDigits'] 	 = Mage::Helper('core')->encrypt(substr($cartaoTruncado,(strlen($cartaoTruncado)-4),4));
+				 
+			   	 
+				 $sql = "INSERT INTO `customer_cielo_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
+				
+				 $writeConnection->query($sql);
+		   	 
+		   	 $ownerData['token'] = $tokenData['codeToken'];
+	   	 	}else{
+	   	 		$ownerData['token'] =  $results[0]['token'];
+	   	 	}
+	   	 }
+	   	 
+	   	 
+		}
+		
+		if($additionalData['token'] != ''){
+			$token = explode("/",$additionalData['token'],2);
+			
+			$ownerData['token'] = $token[1];
+			$webServiceOrderData['ccType'] = $token[0];
+			$webServiceOrder->setData($webServiceOrderData);
+			
+			$redirectUrl = $webServiceOrder->requestTransactionByToken($ownerData);
+		}else{
+			$redirectUrl = $webServiceOrder->requestTransaction($ownerData);	
 		}
 
-	  
-		
-
-		
-		$redirectUrl = $webServiceOrder->requestTransaction($ownerData);
+	  	
 		Mage::getSingleton('core/session')->setData('cielo-transaction', $webServiceOrder);
 		
 		if($redirectUrl == false)

@@ -34,10 +34,39 @@
 		<br />
 <?php
 	
+	$tokens = $this->getCieloTokens();
+
+	if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1)){
+	echo "<p>Utilizar algum cartão previamente cadastradado:</p>";	
+	echo "<ul>";
+	foreach ($tokens as $token) {
+		$img = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_SKIN) . "frontend/default/default/images/cielo/".$token['image']."";
+		$lastDigits = Mage::Helper('core')->decrypt($token['last_digits']);
+		echo "<li style='width: 70px; float:left; '><label for=payment[token]><img src='$img' style='width: 40px;'>****$lastDigits</label>";
+		?>
+
+		<input name="payment[token]" type="radio" value="<?php echo $token['cc_type'].'/'.$token['token']; ?>" id="card-<?php echo $token['cc_type']; ?>-tk" 
+						   onclick="queryCieloUpdateInstallments('<?php echo $token['cc_type']; ?>');showCardData(false);unlockRequiredFields();" class="validate-one-required-by-name" /></li>	
+<?php
+	
+	}
+	?>
+	<li style="width: 70px; float:left; "><label>Outro<br>Cartão</label><br><br>
+	<input style='margin-top:9px;' name="payment[token]" type="radio" value="" id="card-other; ?>" 
+						   onclick="showCardData(true);lockRequiredFields();" /></li>
+
+	<?php
+	echo "</ul><br><br><br><br><br>";
+	}
+	?>
+
+	<div id='card-data'>
+	<?php
+
 	$cardsData = $this->getAllowedCards();
 	
 	$size = count($cardsData);
-	
+		
 	for($i = 0; $i < $size; $i++)
 	{
 		$value = $cardsData[$i]['value'];
@@ -48,6 +77,8 @@
 		if($i % 3 == 0)
 		{
 ?>
+
+
 		<li class="first">
 		<ul class="card-logo">
 <?php
@@ -61,6 +92,7 @@
 						   onclick="queryCieloUpdateInstallments('<?php echo $value; ?>')" class="validate-one-required-by-name" />
 				</label>
 			</li>
+
 <?php
 		// fecha agrupamento de bandeiras
 		if(($i == $size - 1))
@@ -121,6 +153,16 @@
 				</div>
 			</li>
 		</li>
+	</div>
+	
+ <?php 
+ 	if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1)){
+ ?>
+	<script type="text/javascript">
+		$('card-data').hide();
+    </script>
+<?php  } ?>
+
 <?php
 	}
 ?>
@@ -137,7 +179,9 @@
 		</li>
 		<br />
 	</ul>
+	
 </fieldset>
+
 <script type="text/javascript">// <![CDATA[
 
 	function queryCieloUpdateInstallments(cardType)
@@ -206,10 +250,36 @@
         
 		return false;
 	}
+
+	function showCardData(show){
+		if(show){
+			$('card-data').show();
+		}else{
+			$('card-data').hide();
+		}
+		
+	}
+
+	function unlockRequiredFields(){
+		$('cielo-cc-card-number').removeClassName('required-entry');
+		$('cielo-cc-security-code').removeClassName('required-entry');
+		$('cielo-cc-card_expiration-mh').removeClassName('required-entry');
+		$('cielo-cc-card_expiration-yr').removeClassName('required-entry');
+		$('cielo-cc-card_owner').removeClassName('required-entry');
+	}
+
+	function lockRequiredFiedls(){
+		$('cielo-cc-card-number').addClassName('required-entry');
+		$('cielo-cc-security-code').addClassName('required-entry');
+		$('cielo-cc-card_expiration-mh').addClassName('required-entry');
+		$('cielo-cc-card_expiration-yr').addClassName('required-entry');
+		$('cielo-cc-card_owner').addClassName('required-entry');	
+	}
 	
 	function cleanCcForm(cardType)
 	{
 <?php
+		
 		if($this->getConfigData('buypage') == "loja")
 		{
 ?>
