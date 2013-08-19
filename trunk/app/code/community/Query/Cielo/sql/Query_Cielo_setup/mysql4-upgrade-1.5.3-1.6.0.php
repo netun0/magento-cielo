@@ -27,16 +27,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 	
-$installer = Mage::getResourceModel('customer/setup', 'core_setup');
+$installer = $this;
 $installer->startSetup();
 
 
-$installer->addAttribute('customer', 'token', array
-(
-	'label' => 'Token',
-	'type'  => 'varchar',
-));
-
+$installer->run("CREATE TABLE `customer_cielo_token` (
+  `idcustomer_cielo_token` int(11) NOT NULL AUTO_INCREMENT,
+  `customer_id` int(10) unsigned DEFAULT NULL,
+  `token` varchar(255) NOT NULL,
+  `cc_type` varchar(255) NOT NULL,
+  `last_digits` varchar(255) NOT NULL,
+  PRIMARY KEY (`idcustomer_cielo_token`),
+  KEY `fk_customer_cielo_token_1_idx` (`customer_id`),
+  CONSTRAINT `fk_customer_cielo_token_1` FOREIGN KEY (`customer_id`) REFERENCES `mag_customer_entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1");
 
 $installer->endSetup();
 
+	
