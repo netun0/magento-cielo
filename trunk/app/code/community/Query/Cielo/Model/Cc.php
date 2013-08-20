@@ -471,10 +471,10 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 
 		/*Cria token caso o cliente não tenha e a loja permita*/
 		if($tokenize == 1  && $this->getConfigData('buypage', $storeId) == "loja" && $additionalData['token'] == ''){
-		 
+		  $tablePrefix = Mage::getConfig()->getTablePrefix();
 		  $resource = Mage::getSingleton('core/resource');
        	  $readConnection = $resource->getConnection('core_read');
-		  $sql = "SELECT * FROM customer_cielo_token WHERE customer_id=".$order->getCustomerId()." AND cc_type='".$ccType."' ";
+		  $sql = "SELECT * FROM ".$tablePrefix."_query_cielo_customer_token WHERE customer_id=".$order->getCustomerId()." AND cc_type='".$ccType."' ";
      	  $results = $readConnection->fetchAll($sql);
 
 		  
@@ -489,8 +489,8 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 	    	 $cartaoTruncado 			 = (string)($xml->token->{'dados-token'}->{'numero-cartao-truncado'});
 			 $tokenData['lastDigits'] 	 = Mage::Helper('core')->encrypt(substr($cartaoTruncado,(strlen($cartaoTruncado)-4),4));
 			 
-		   	 
-			 $sql = "INSERT INTO `customer_cielo_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
+		   	 $tablePrefix = Mage::getConfig()->getTablePrefix();
+			 $sql = "INSERT INTO `".$tablePrefix."_query_cielo_customer_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
 			
 			 $writeConnection->query($sql);
 		   	 
@@ -507,8 +507,8 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		    	 $cartaoTruncado 			 = (string)($xml->token->{'dados-token'}->{'numero-cartao-truncado'});
 				 $tokenData['lastDigits'] 	 = Mage::Helper('core')->encrypt(substr($cartaoTruncado,(strlen($cartaoTruncado)-4),4));
 				 
-			   	 
-				 $sql = "INSERT INTO `customer_cielo_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
+			   	 $tablePrefix = Mage::getConfig()->getTablePrefix();
+				 $sql = "INSERT INTO `".$tablePrefix."query_cielo_customer_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
 				
 				 $writeConnection->query($sql);
 		   	 
@@ -524,7 +524,15 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		if($additionalData['token'] != ''){
 			$token = explode("/",$additionalData['token'],2);
 			
-			$ownerData['token'] = $token[1];
+			$tablePrefix = Mage::getConfig()->getTablePrefix();
+			$readConnection = Mage::getSingleton('core/resource')->getConnection('core_read');
+			$customerId = Mage::getSingleton('checkout/cart')->getQuote()->getCustomerId();		
+			$query = "SELECT token FROM ".$tablePrefix."_query_cielo_customer_token WHERE idcustomer_cielo_token=".$token[1];
+			
+			$codeToken = $readConnection->fetchOne($query);
+
+			
+			$ownerData['token'] = $codeToken;
 			$webServiceOrderData['ccType'] = $token[0];
 			$webServiceOrder->setData($webServiceOrderData);
 			

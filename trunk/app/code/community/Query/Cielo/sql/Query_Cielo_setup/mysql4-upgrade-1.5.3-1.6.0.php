@@ -30,8 +30,9 @@
 $installer = $this;
 $installer->startSetup();
 
+$tablePrefix= Mage::getConfig()->getTablePrefix();
 
-$installer->run("CREATE TABLE `customer_cielo_token` (
+$installer->run("CREATE TABLE `".$tablePrefix."_query_cielo_customer_token` (
   `idcustomer_cielo_token` int(11) NOT NULL AUTO_INCREMENT,
   `customer_id` int(10) unsigned DEFAULT NULL,
   `token` varchar(255) NOT NULL,

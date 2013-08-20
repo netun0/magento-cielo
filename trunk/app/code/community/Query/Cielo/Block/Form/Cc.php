@@ -234,11 +234,11 @@ class Query_Cielo_Block_Form_Cc extends Mage_Payment_Block_Form
 
 		//Só pesquisa por token se a loja permiter tokenize
 		if($this->getConfigData('tokenize') && Mage::getSingleton('customer/session')->isLoggedIn()){
-		
+			$tablePrefix = Mage::getConfig()->getTablePrefix();
 			$readConnection = Mage::getSingleton('core/resource')->getConnection('core_read');
 			$customerId = Mage::getSingleton('checkout/cart')->getQuote()->getCustomerId();		
-			$query = "SELECT token,cc_type,last_digits FROM customer_cielo_token WHERE customer_id=".$customerId;
-
+			$query = "SELECT idcustomer_cielo_token as id,cc_type,last_digits FROM ".$tablePrefix."_query_cielo_customer_token WHERE customer_id=".$customerId;
+			
 			$cardsAllowed = $this->getAllowedCards();
  
  			$tokens = $readConnection->fetchAll($query);
