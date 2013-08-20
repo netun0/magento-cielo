@@ -125,12 +125,6 @@ class Query_Cielo_Model_WebServiceOrder
 		$msg .= $this->_getXMLCapture() . "\n   ";
 		$msg .= '</requisicao-transacao>';
 		
-<<<<<<< .mine
-		
-
-=======
-
->>>>>>> .r9
 		$maxAttempts = 3;
 		
 		while($maxAttempts > 0)
@@ -274,46 +268,6 @@ class Query_Cielo_Model_WebServiceOrder
 		}
 		
 		return false;	
-	}
-
-	
-	public function requestToken($ownerData)
-	{
-		$msg  = $this->_getXMLHeader() . "\n";
-		
-		$msg .= '<requisicao-token id="' . md5(date("YmdHisu")) . '" versao="' . self::VERSION . '">' . "\n   ";
-		$msg .= $this->_getXMLCieloData() . "\n   ";
-		$msg .= $this->_getXMLOwnerData($ownerData,false) . "\n   ";
-		$msg .= '</requisicao-token>';
-		
-    	$maxAttempts = 3;
-		
-		while($maxAttempts > 0)
-		{
-			if($this->_sendRequest("mensagem=" . $msg, "Token"))
-			{
-				if($this->_hasConsultationError())
-				{
-					Mage::log($this->_transactionError);
-					return false;
-				}
-				
-				$xml = simplexml_load_string($this->_xmlResponse);
-				
-				
-				
-				return ($xml);
-			}
-			
-			$maxAttempts--;
-		}
-		
-		if($maxAttempts == 0)
-		{
-			Mage::log("[CIELO] Não conseguiu consultar o servidor.");
-		}
-		
-		return false;
 	}
 	
 	
