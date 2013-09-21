@@ -50,14 +50,19 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
             $data = new Varien_Object($data);
         }
         
-        // salva a bandeira e o numero de parcelas
+		// salva a bandeira, o numero de parcelas e o token
 		$info = $this->getInfoInstance();
         $additionaldata = array
         (
-			'parcels_number' => $data->getParcelsNumber(),
-			'token' =>	$data->getToken()
-
+			'parcels_number' => $data->getParcelsNumber()
 		);
+		
+		if($data->getToken())
+		{
+			$tokenData = $this->_getTokenById($data->getToken());
+			$additionaldata['token'] = $tokenData['token'];
+			$data->setCcType($tokenData['ccType']);
+		}
 		
 		$info->setCcType($data->getCcType())
 			 ->setCcNumber(Mage::helper('core')->encrypt($data->getCcNumber()))
@@ -121,21 +126,23 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		$info = $this->getInfoInstance();
 		$errorMsg = false;
 		
-
-
 		if($this->getConfigData('buypage', $this->getStoreId()) != "loja")
+		{
 			return $this;
+		}
 		
 		$additionalData = unserialize($info->getAdditionalData());
 
-		if(($additionalData['token']) != ''){
+		if(isset($additionalData['token']) && $additionalData['token'] != '')
+		{
 			$availableTypes = Mage::getModel('Query_Cielo/cc_types')->getCodes();
-			if(in_array($info->getCcType(), $availableTypes)){
-
-			}else{
+			if(!in_array($info->getCcType(), $availableTypes))
+			{
 				$errorMsg = Mage::helper('Query_Cielo')->__('Credit card type is not allowed for this payment method.');
-			}							
-		}else{
+			}						
+		}
+		else
+		{
 
 			$availableTypes = Mage::getModel('Query_Cielo/cc_types')->getCodes();
 			$ccNumber = Mage::helper('core')->decrypt($info->getCcNumber());
@@ -305,7 +312,7 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
             'SO' 			=> '/^[0-9]{3,4}$/', 		// Solo
             'OT' 			=> '/^[0-9]{3,4}$/',
             'jcb' 			=> '/^[0-9]{3,4}$/', 		//JCB
-	    'aura'			=> '/^[0-9]{3}$/'
+			'aura'			=> '/^[0-9]{3}$/'
         );
         return $verificationExpList;
     }
@@ -374,13 +381,13 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 	public function getOrderPlaceRedirectUrl()
 	{
 		$info = $this->getInfoInstance();
-		$order = $info->getQuote();
+		$quote = $info->getQuote();
 		$storeId = $this->getStoreId();
-		$payment = $order->getPayment();
+		$payment = $quote->getPayment();
 		$additionaldata = unserialize($payment->getData('additional_data'));
 		
 		// coleta os dados necessarios
-		$value 				= Mage::helper('Query_Cielo')->formatValueForCielo($order->getGrandTotal());
+		$value 				= Mage::helper('Query_Cielo')->formatValueForCielo($quote->getGrandTotal());
 		$paymentType 		= $additionaldata["parcels_number"];
 		$ccType 			= $payment->getCcType();
 		$paymentParcels 	= $this->getConfigData('installments_type', $storeId);
@@ -389,9 +396,6 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 		$autoCapture		= $this->getConfigData('auto_capture', $storeId);
 		$environment 		= $this->getConfigData('environment', $storeId);
 		$sslFile	 		= $this->getConfigData('ssl_file', $storeId);
-		$tokenize			= $this->getConfigData('tokenize', $storeId);
-
-		
 
 		// cria instancia do pedido
 		$webServiceOrder = Mage::getModel('Query_Cielo/webServiceOrder', array('enderecoBase' => $environment, 'caminhoCertificado' => $sslFile));
@@ -404,14 +408,13 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 			'cieloKey'			=> $cieloKey,
 			'capture'			=> ($autoCapture == 1) ? 'true' : 'false',
 			'autorize'			=> '1',
+			'generateToken'		=> 'false',
 			'clientOrderNumber'	=> $payment->getId(),
 			'clientOrderValue'	=> $value,
 			'postbackURL'		=> Mage::getUrl('querycielo/pay/verify'),
 			'clientSoftDesc'	=> $this->getConfigData('softdescriptor', $storeId)	
 		);
-
 		
-
 		// conforme mostrado no manual versao 2.5.1, pagina 13,
 		// caso o cartao seja Dinners, Discover, Elo, Amex,Aura ou JCB
 		// o valor do flag autorizar deve ser 3
@@ -436,10 +439,6 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 			$webServiceOrderData['paymentType'] = $paymentParcels;
 			$webServiceOrderData['paymentParcels'] = $paymentType;
 		}
-
-
-		$webServiceOrder->setData($webServiceOrderData);
-		
 		
 		// caso seja buy page loja, passa dados do cliente
 		if($this->getConfigData('buypage', $storeId) == "loja")
@@ -448,100 +447,53 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 			$ccExpMonth = ($ccExpMonth < 10) ? ("0" . $ccExpMonth) : $ccExpMonth;
 			$additionalData = unserialize($info->getAdditionalData());
 			
-
 			$ownerData = array
 			(
 				'number' 	=> Mage::helper('core')->decrypt($info->getCcNumber()),
 				'exp_date' 	=> $info->getCcExpYear() . $ccExpMonth,
 				'sec_code' 	=> Mage::helper('core')->decrypt($info->getCcCid()),
-				'name' 		=> $info->getCcOwner(),
-				'token'		=> ''
+				'name' 		=> $info->getCcOwner()
 			);
+			
+			// confere se ha utilizacao de tokens
+			if($this->getConfigData('tokenize', $storeId))
+			{
+				// confere se foi passado um token
+				if(isset($additionalData['token']) && $additionalData['token'] != '')
+				{
+					$ownerData = array('token' => $additionalData['token']);
+					$webServiceOrderData['autorize'] = '3';
+				}
+				// confere se existe token para o cartao inserido
+				else if($token = $this->_getToken($quote->getCustomerId(), $ccType, $ownerData['number']))
+				{
+					$ownerData = array('token' => $token);
+					$webServiceOrderData['autorize'] = '3';
+				}
+				// cria um novo token para o cliente
+				else
+				{
+					$webServiceOrderData['generateToken'] = 'true';
+				}
+			}
 		}
 		else
 		{
 			$ownerData = false;
 		}
-
 		
-		$resource = Mage::getSingleton('core/resource');
-       	$readConnection = $resource->getConnection('core_read');
-		$writeConnection = $resource->getConnection('core_write');
-
-
-		/*Cria token caso o cliente não tenha e a loja permita*/
-		if($tokenize == 1  && $this->getConfigData('buypage', $storeId) == "loja" && $additionalData['token'] == ''){
-		  $tablePrefix = Mage::getConfig()->getTablePrefix();
-		  $resource = Mage::getSingleton('core/resource');
-       	  $readConnection = $resource->getConnection('core_read');
-		  $sql = "SELECT * FROM ".$tablePrefix."_query_cielo_customer_token WHERE customer_id=".$order->getCustomerId()." AND cc_type='".$ccType."' ";
-     	  $results = $readConnection->fetchAll($sql);
-
-		  
-
-		 if(!$results){
-
-			 $webServiceOrder->requestToken($ownerData);
-		   	 $xml = $webServiceOrder->getXmlResponse();
-		   	 
-		   	 $tokenData = array();
-	    	 $tokenData['codeToken'] 	 = (string)($xml->token->{'dados-token'}->{'codigo-token'});
-	    	 $cartaoTruncado 			 = (string)($xml->token->{'dados-token'}->{'numero-cartao-truncado'});
-			 $tokenData['lastDigits'] 	 = Mage::Helper('core')->encrypt(substr($cartaoTruncado,(strlen($cartaoTruncado)-4),4));
-			 
-		   	 $tablePrefix = Mage::getConfig()->getTablePrefix();
-			 $sql = "INSERT INTO `".$tablePrefix."_query_cielo_customer_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
-			
-			 $writeConnection->query($sql);
-		   	 
-		   	 $ownerData['token'] = $tokenData['codeToken'];
-
-	   	 }else{
-	   	 	if(Mage::Helper('core')->decrypt($results[0]['last_digits']) != substr($ownerData['number'],(strlen($ownerData['number'])-4),4)){
-
-				 $webServiceOrder->requestToken($ownerData);
-			   	 $xml = $webServiceOrder->getXmlResponse();
-			   	 
-			   	 $tokenData = array();
-		    	 $tokenData['codeToken'] 	 = (string)($xml->token->{'dados-token'}->{'codigo-token'});
-		    	 $cartaoTruncado 			 = (string)($xml->token->{'dados-token'}->{'numero-cartao-truncado'});
-				 $tokenData['lastDigits'] 	 = Mage::Helper('core')->encrypt(substr($cartaoTruncado,(strlen($cartaoTruncado)-4),4));
-				 
-			   	 $tablePrefix = Mage::getConfig()->getTablePrefix();
-				 $sql = "INSERT INTO `".$tablePrefix."query_cielo_customer_token`(`customer_id`,`token`,`cc_type`,`last_digits`) VALUES(".$order->getCustomerId().",'".$tokenData['codeToken']."','".$ccType."','".$tokenData['lastDigits']."')";
-				
-				 $writeConnection->query($sql);
-		   	 
-		   	 $ownerData['token'] = $tokenData['codeToken'];
-	   	 	}else{
-	   	 		$ownerData['token'] =  $results[0]['token'];
-	   	 	}
-	   	 }
-	   	 
-	   	 
-		}
+		// faz a requisicao a cielo
+		$webServiceOrder->setData($webServiceOrderData);
+		$redirectUrl = $webServiceOrder->requestTransaction($ownerData);
 		
-		if($additionalData['token'] != ''){
-			$token = explode("/",$additionalData['token'],2);
-			
-			$tablePrefix = Mage::getConfig()->getTablePrefix();
-			$readConnection = Mage::getSingleton('core/resource')->getConnection('core_read');
-			$customerId = Mage::getSingleton('checkout/cart')->getQuote()->getCustomerId();		
-			$query = "SELECT token FROM ".$tablePrefix."_query_cielo_customer_token WHERE idcustomer_cielo_token=".$token[1];
-			
-			$codeToken = $readConnection->fetchOne($query);
-
-			
-			$ownerData['token'] = $codeToken;
-			$webServiceOrderData['ccType'] = $token[0];
-			$webServiceOrder->setData($webServiceOrderData);
-			
-			$redirectUrl = $webServiceOrder->requestTransactionByToken($ownerData);
-		}else{
-			$redirectUrl = $webServiceOrder->requestTransaction($ownerData);	
-		}
-
-	  	
+		// caso volte um token, armazena-o para um usuario
+		$this->_saveNewToken
+		(
+			$webServiceOrder->getXmlResponse(),
+			$quote->getCustomerId(),
+			$ccType
+		);
+		
 		Mage::getSingleton('core/session')->setData('cielo-transaction', $webServiceOrder);
 		
 		if($redirectUrl == false)
@@ -562,4 +514,90 @@ class Query_Cielo_Model_Cc extends Mage_Payment_Model_Method_Abstract
 			return $redirectUrl;
 		}
     }
+	
+	private function _getToken($customerId, $ccType, $ccNumber)
+	{
+		$resource = Mage::getSingleton('core/resource');
+		$readConnection = $resource->getConnection('core_read');
+		
+		$tablePrefix = (string) Mage::getConfig()->getTablePrefix();
+		if($tablePrefix)
+		{
+			$tablePrefix = "_" . $tablePrefix;
+		}
+		
+		$last4ccNumbers = substr($ccNumber,(strlen($ccNumber) - 4), 4);
+		
+		$sql = "SELECT token FROM " . $tablePrefix . "query_cielo_customer_token WHERE customer_id=" . $customerId . " AND " . 
+				"cc_type='" . $ccType . "' AND last_digits ='" . Mage::Helper('core')->encrypt($last4ccNumbers) . "'";
+		$result = $readConnection->fetchCol($sql);
+		
+		// verifica se o cliente tem token
+		if(!$result || count($result) != 1)
+		{
+			return false;
+		}
+		else
+		{
+			return $result[0];
+		}
+	}
+	
+	private function _saveNewToken($responseXml, $customerId, $ccType)
+	{
+		$tokenDataTag = "dados-token";
+		$codeTag = "codigo-token";
+		$cardNumberTag = "numero-cartao-truncado";
+		
+		// confere se houve geracao de token
+		if( !$responseXml || 
+			!$responseXml->token || 
+			!$responseXml->token->$tokenDataTag || 
+			!$responseXml->token->$tokenDataTag->$codeTag ||
+			!$responseXml->token->$tokenDataTag->$cardNumberTag ||
+			!$responseXml->token->$tokenDataTag->status ||
+			((string) $responseXml->token->$tokenDataTag->status) != "1")
+		{
+			return;
+		}
+		
+		$token = (string) $responseXml->token->$tokenDataTag->$codeTag;
+		$cardNumber = (string) $responseXml->token->$tokenDataTag->$cardNumberTag;
+		$lastDigits = Mage::Helper('core')->encrypt(substr($cardNumber, (strlen($cardNumber) - 4), 4));
+		
+		// insere dados no banco
+		$resource = Mage::getSingleton('core/resource');
+       	$writeConnection = $resource->getConnection('core_write');
+		$tablePrefix = (string) Mage::getConfig()->getTablePrefix();
+		if($tablePrefix)
+		{
+			$tablePrefix = "_" . $tablePrefix;
+		}
+		$sql = "INSERT INTO `" . $tablePrefix . "query_cielo_customer_token`" . 
+				"	(`customer_id`,`token`,`cc_type`,`last_digits`) " . 
+				"VALUES " . 
+				"	(". $customerId .",'" . $token . "','" . $ccType . "','" . $lastDigits . "')";
+		
+		$writeConnection->query($sql);
+	}
+	
+	private function _getTokenById($tokenString)
+	{
+		$tokenData = explode("/", $tokenString, 2);
+		
+		$tablePrefix = (string) Mage::getConfig()->getTablePrefix();
+		if($tablePrefix)
+		{
+			$tablePrefix = "_" . $tablePrefix;
+		}
+		
+		$readConnection = Mage::getSingleton('core/resource')->getConnection('core_read');
+		$query = "SELECT token FROM " . $tablePrefix . "query_cielo_customer_token WHERE token_id=" . $tokenData[1];
+		
+		$returnValues = array();
+		$returnValues['token'] = $readConnection->fetchOne($query);
+		$returnValues['ccType'] = $tokenData[0];
+		
+		return $returnValues;
+	}
 }
