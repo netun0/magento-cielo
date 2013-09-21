@@ -101,7 +101,7 @@ class Query_Cielo_Helper_Data extends Mage_Core_Helper_Abstract
 				$label = "Em cancelamento";
 				break;
 			default:
-				$label = "Erro (" . $statusCode . ")";
+				$label = "Erro na transação: caso o problema persista, por favor entre em contato.";
 		}
 		
 		return htmlentities($label);
@@ -172,5 +172,4 @@ class Query_Cielo_Helper_Data extends Mage_Core_Helper_Abstract
 			return $nodeString;
 		}
 	}
-    
 }

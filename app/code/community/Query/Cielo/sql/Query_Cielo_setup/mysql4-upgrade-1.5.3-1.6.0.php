@@ -30,17 +30,22 @@
 $installer = $this;
 $installer->startSetup();
 
-$tablePrefix= Mage::getConfig()->getTablePrefix();
+$tablePrefix = (string) Mage::getConfig()->getTablePrefix();
+if($tablePrefix)
+{
+	$tablePrefix = "_" . $tablePrefix;
+}
 
-$installer->run("CREATE TABLE `".$tablePrefix."_query_cielo_customer_token` (
-  `idcustomer_cielo_token` int(11) NOT NULL AUTO_INCREMENT,
-  `customer_id` int(10) unsigned DEFAULT NULL,
-  `token` varchar(255) NOT NULL,
-  `cc_type` varchar(255) NOT NULL,
-  `last_digits` varchar(255) NOT NULL,
-  PRIMARY KEY (`idcustomer_cielo_token`),
-  KEY `fk_customer_cielo_token_1_idx` (`customer_id`),
-  CONSTRAINT `fk_customer_cielo_token_1` FOREIGN KEY (`customer_id`) REFERENCES `mag_customer_entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+
+$installer->run
+("CREATE TABLE `" . $tablePrefix . "query_cielo_customer_token`
+(
+	`token_id` int(11) NOT NULL AUTO_INCREMENT,
+	`customer_id` int(10) unsigned DEFAULT NULL,
+	`token` varchar(255) NOT NULL,
+	`cc_type` varchar(255) NOT NULL,
+	`last_digits` varchar(255) NOT NULL,
+	PRIMARY KEY (`token_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1");
 
 $installer->endSetup();

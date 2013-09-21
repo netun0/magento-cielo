@@ -31,37 +31,62 @@
 ?>
 <fieldset class="form-list">
 	<ul id="payment_form_Query_Cielo_Cc" style="display:none;">
-		<br />
+	<br />
 <?php
 	
 	$tokens = $this->getCieloTokens();
 
-	if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1)){
-	echo "<p>Utilizar algum cartão previamente cadastradado:</p>";	
-	echo "<ul>";
-	foreach ($tokens as $token) {
-		$img = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_SKIN) . "frontend/default/default/images/cielo/".$token['image']."";
-		$lastDigits = Mage::Helper('core')->decrypt($token['last_digits']);
-		echo "<li style='width: 70px; float:left; '><label for=payment[token]><img src='$img' style='width: 40px;'>****$lastDigits</label>";
-		?>
-
-		<input name="payment[token]" type="radio" value="<?php echo $token['cc_type'].'/'.$token['id']; ?>" id="card-<?php echo $token['cc_type']; ?>-tk" 
-						   onclick="queryCieloUpdateInstallments('<?php echo $token['cc_type']; ?>');showCardData(false);unlockRequiredFields();" class="validate-one-required-by-name" /></li>	
+	if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1))
+	{
+?>
+		<p>Você deseja pagar com qual cartão?</p>
+		<ul>
 <?php
-	
-	}
-	?>
-	<li style="width: 70px; float:left; "><label>Outro<br>Cartão</label><br><br>
-	<input style='margin-top:9px;' name="payment[token]" type="radio" value="" id="card-other; ?>" 
-						   onclick="showCardData(true);lockRequiredFields();" /></li>
+		foreach ($tokens as $token)
+		{
+			$img = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_SKIN) . "frontend/default/default/images/cielo/".$token['image']."";
+			$lastDigits = Mage::Helper('core')->decrypt($token['last_digits']);
+?>
+			<li style="margin-bottom: 20px;">
+				<table>
+					<tr>
+						<td style="width: 25px;">
+							<input name="payment[token]" 
+								   type="radio" 
+								   value="<?php echo $token['cc_type'] . '/' . $token['id']; ?>" 
+								   id="card-<?php echo $token['id']; ?>-tk" 
+								   onclick="queryCieloUpdateInstallments('<?php echo $token["cc_type"]; ?>'); showCardData(false); unlockRequiredFields();"
+								   class="validate-one-required-by-name"
+								   style="margin-top: 3px;" />
+						</td>
+						<td>
+							<label for="card-<?php echo $token['id']; ?>-tk"><img src="<?php echo $img; ?>" style="width: 40px;"> **** **** **** <?php echo $lastDigits; ?></label>
+						</td>
+					</tr>
+				</table>
+			</li>	
+<?php
+		}
+?>
+			<li>
+				<table style="margin: 25px 0 10px 0;">
+					<tr>
+						<td style="width: 25px;">
+							<input name="payment[token]" type="radio" value="" id="card-other" onclick="showCardData(true); lockRequiredFields();" />
+						</td>
+						<td>
+							<label for="card-other">Outro Cartão: </label>
+						</td>
+					</tr>
+				</table>
+			</li>
+		</ul>
 
-	<?php
-	echo "</ul><br><br><br><br><br>";
+<?php
 	}
-	?>
-
+?>
 	<div id='card-data'>
-	<?php
+<?php
 
 	$cardsData = $this->getAllowedCards();
 	
@@ -155,15 +180,15 @@
 		</li>
 	</div>
 	
- <?php 
- 	if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1)){
- ?>
-	<script type="text/javascript">
-		$('card-data').hide();
-    </script>
-<?php  } ?>
-
+<?php 
+		if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1))
+		{
+?>
+		<script type="text/javascript">
+			$('card-data').hide();
+		</script>
 <?php
+		}
 	}
 ?>
 		<li>

@@ -230,22 +230,32 @@ class Query_Cielo_Block_Form_Cc extends Mage_Payment_Block_Form
 	*
 	*/
 
-	public function getCieloTokens(){
-
-		//Só pesquisa por token se a loja permiter tokenize
-		if($this->getConfigData('tokenize') && Mage::getSingleton('customer/session')->isLoggedIn()){
-			$tablePrefix = Mage::getConfig()->getTablePrefix();
+	public function getCieloTokens()
+	{
+		// Soh pesquisa por token se a loja permiter tokenize
+		if($this->getConfigData('tokenize') && Mage::getSingleton('customer/session')->isLoggedIn())
+		{
+			$tablePrefix = (string) Mage::getConfig()->getTablePrefix();
+			
+			if($tablePrefix)
+			{
+				$tablePrefix = "_" . $tablePrefix;
+			}
+			
 			$readConnection = Mage::getSingleton('core/resource')->getConnection('core_read');
 			$customerId = Mage::getSingleton('checkout/cart')->getQuote()->getCustomerId();		
-			$query = "SELECT idcustomer_cielo_token as id,cc_type,last_digits FROM ".$tablePrefix."_query_cielo_customer_token WHERE customer_id=".$customerId;
+			$query = "SELECT token_id as id,cc_type,last_digits FROM " . $tablePrefix . "query_cielo_customer_token WHERE customer_id=".$customerId;
 			
 			$cardsAllowed = $this->getAllowedCards();
  
  			$tokens = $readConnection->fetchAll($query);
 
- 			for ($i=0; $i < count($tokens); $i++) {
- 				foreach ($cardsAllowed as $card) {
- 					if($tokens[$i]['cc_type'] == $card['value']){
+ 			for ($i=0; $i < count($tokens); $i++)
+			{
+ 				foreach ($cardsAllowed as $card)
+				{
+ 					if($tokens[$i]['cc_type'] == $card['value'])
+					{
  						$tokens[$i]['image'] = $card['image'];
 
  					}
@@ -253,16 +263,11 @@ class Query_Cielo_Block_Form_Cc extends Mage_Payment_Block_Form
  			}
  			
  			return $tokens;
-
-		}else{
-
-			return false;
-
 		}
-
-		
-
-
+		else
+		{
+			return false;
+		}
 	}
 	
 	/**
