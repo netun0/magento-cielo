@@ -74,37 +74,37 @@ class Query_Cielo_Helper_Data extends Mage_Core_Helper_Abstract
 		switch($statusCode)
 		{
 			case 1:
-				$label = "Em andamento";
+				$label = "Processing";
 				break;
 			case 2:
-				$label = "Autenticada";
+				$label = "Authenticated";
 				break;
 			case 3:
-				$label = "Não autenticada";
+				$label = "Unauthenticated";
 				break;
 			case 4:
-				$label = "Autorizada";
+				$label = "Authorized";
 				break;
 			case 5:
-				$label = "Não autorizada";
+				$label = "Unauthorized";
 				break;
 			case 6:
-				$label = "Concluída";
+				$label = "Complete";
 				break;
 			case 9:
-				$label = "Cancelada";
+				$label = "Canceled";
 				break;
 			case 10:
-				$label = "Em autenticação";
+				$label = "Authenticating";
 				break;
 			case 10:
-				$label = "Em cancelamento";
+				$label = "Canceling";
 				break;
 			default:
-				$label = "Erro na transação: caso o problema persista, por favor entre em contato.";
+				$label = "Error on transaction: if persists, please contact us.";
 		}
 		
-		return htmlentities($label);
+		return htmlentities($this->__($label));
     }
     
     
