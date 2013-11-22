@@ -91,7 +91,7 @@
 	$cardsData = $this->getAllowedCards();
 	
 	$size = count($cardsData);
-		
+	
 	for($i = 0; $i < $size; $i++)
 	{
 		$value = $cardsData[$i]['value'];
@@ -181,7 +181,7 @@
 	</div>
 	
 <?php 
-		if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1))
+		if($tokens && (count($tokens) > 0) && ($this->getConfigData('tokenize') == 1))
 		{
 ?>
 		<script type="text/javascript">
@@ -276,13 +276,16 @@
 		return false;
 	}
 
-	function showCardData(show){
-		if(show){
+	function showCardData(show)
+	{
+		if(show)
+		{
 			$('card-data').show();
-		}else{
+		}
+		else
+		{
 			$('card-data').hide();
 		}
-		
 	}
 
 	function unlockRequiredFields(){
