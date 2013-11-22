@@ -35,8 +35,8 @@
 <?php
 	
 	$tokens = $this->getCieloTokens();
-
-	if((count($tokens) > 0) && ($this->getConfigData('tokenize') == 1))
+	
+	if($tokens && (count($tokens) > 0) && ($this->getConfigData('tokenize') == 1))
 	{
 ?>
 		<p>Você deseja pagar com qual cartão?</p>
