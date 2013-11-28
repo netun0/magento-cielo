@@ -141,7 +141,7 @@
 		<layout>
 			<updates>
 				<Query_Cielo>
-					<file>cielo.xml</file>
+					<file>query-cielo.xml</file>
 				</Query_Cielo>
 			</updates>
 		</layout>
